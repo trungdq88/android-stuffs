@@ -1,4 +1,4 @@
-AndroidStuffs
+Android Stuffs
 =============
 
-Useful stuff to use in your Android app
+Useful stuffs to use in your Android app
