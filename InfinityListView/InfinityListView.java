@@ -1,4 +1,4 @@
-package com.hac.apps.videostream.utils;
+package com.hac.apps.megahd.components;
 
 import android.content.Context;
 import android.os.Handler;
@@ -7,7 +7,7 @@ import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.*;
-import com.hac.apps.videostream.app.R;
+import com.hac.apps.megahd.R;
 
 import java.util.Collection;
 
@@ -17,7 +17,7 @@ import java.util.Collection;
  * How to use:
  * Nothing special, just remember to implement IInfinityAdapter to the adapter.
  *
- * listView = (ListView) rootView.findViewById(R.id.listView);
+ * InfinityListView listView = (InfinityListView) rootView.findViewById(R.id.listView);
  * List<LiveItem> items = new ArrayList<LiveItem>();
  * LiveAdapter adapter = new LiveAdapter(getAppContext(), items);
  * listView.setEmptyView(rootView.findViewById(R.id.empty_list));
@@ -50,12 +50,12 @@ public class InfinityListView extends ListView implements AbsListView.OnScrollLi
     /**
      * First item number to load
      */
-    private int firstLoadingCount = 5;
+    private int firstLoadingCount = 10;
 
     /**
      * Number of item to load at a time
      */
-    private int numPerLoading = 5;
+    private int numPerLoading = 10;
 
     /**
      * Item holder between loadings (because loading will be ran in another thread)
@@ -191,7 +191,7 @@ public class InfinityListView extends ListView implements AbsListView.OnScrollLi
         ProgressBar loading = new ProgressBar(getContext());
         loading.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT, Gravity.CENTER));
         layout.addView(loading);
-        layout.setLayoutParams(new ListView.LayoutParams(LayoutParams.MATCH_PARENT, ListView.LayoutParams.WRAP_CONTENT));
+        layout.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
         float scale = getResources().getDisplayMetrics().density;
         int dpAsPixels = (int) (10 * scale + 0.5f);
         layout.setPadding(0, 0, 0, dpAsPixels);
@@ -213,10 +213,7 @@ public class InfinityListView extends ListView implements AbsListView.OnScrollLi
     @Override
     public void onScroll(AbsListView absListView, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
         if (getAdapter() == null) return;
-        if (!((IInfinityAdapter) adapter).hasMoreData()) {
-            if (getFooterViewsCount() > 0) {
-                removeFooterView(footer);
-            }
+        if (!updateFooterView()) {
             return;
         }
         if (getAdapter().getCount() == 0) return;
@@ -231,11 +228,24 @@ public class InfinityListView extends ListView implements AbsListView.OnScrollLi
     }
 
     /**
-     * This list view require IInfinityAdapter for its adapter
-     * @param <T>
+     * Return false if no more data, true if still have data
+     * @return
      */
-    public interface IInfinityAdapter<T> {
-        public void addItem(Object obj);
+    private boolean updateFooterView() {
+        if (!((IInfinityAdapter) adapter).hasMoreData()) {
+            if (getFooterViewsCount() > 0) {
+                removeFooterView(footer);
+            }
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * This list view require IInfinityAdapter for its adapter
+     */
+    public interface IInfinityAdapter {
+        public void addItems(Collection<Object> objs);
 
         public Collection loadMore(int offset, int count);
 
@@ -249,10 +259,9 @@ public class InfinityListView extends ListView implements AbsListView.OnScrollLi
         @Override
         public void handleMessage(Message msg) {
             isLoading = false;
-            for (Object obj : _loadedItems) {
-                ((IInfinityAdapter) adapter).addItem(obj);
-            }
+            ((IInfinityAdapter) adapter).addItems(_loadedItems);
             _loadedItems.clear();
+            updateFooterView();
             adapter.notifyDataSetChanged();
             updateEmptyView();
         }
