@@ -1,4 +1,5 @@
 How to use:
+-
 In your activity:
 
     private void initImageFetcher() {
